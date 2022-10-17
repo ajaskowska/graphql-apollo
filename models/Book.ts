@@ -1,4 +1,5 @@
-const {model, Schema} = require('mongoose');
+// @ts-ignore
+const { model, Schema } = require('mongoose');
 
 const bookSchema = new Schema({
     title: String,
