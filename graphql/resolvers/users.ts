@@ -1,5 +1,6 @@
 const User = require('../../models/User');
-const {ApolloError} = require('apollo-server-errors');
+// const {ApolloError} = require('apollo-server-errors');
+import { GraphQLError } from 'graphql';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -9,7 +10,7 @@ module.exports = {
             //check if user exist = email already in db
             const oldUser = await User.findOne({email});
             if (oldUser) {
-                throw new ApolloError(`${email} already registered`, 'USER_ALREADY_EXISTS')
+                throw new GraphQLError(`${email} already registered`)
             }
             //    encrypt password using bcrypt (pass + salt)
             const encryptedPassword = await bcrypt.hash(password, 10);
@@ -35,7 +36,7 @@ module.exports = {
                 ...res._doc
             };
         },
-        async loginUser(_: any, {loginInput: {email, password}}: any){
+        async loginUser(_: any, {loginInput: {email, password}}: any, context: any){
             //check if user = email exists
             const user = await User.findOne({email});
             // check if entered password = encrypted password
@@ -48,15 +49,21 @@ module.exports = {
                 );
                 // attach token to user above
                 user.token = token;
+        // SESSION
+                context.session.username = user.username;
                 return{
                     id: user.id,
                     ...user._doc
                 }
             }else {
                 // if user doesn't exist, return error
-                throw new ApolloError('incorrect credentials', 'INCORRECT_PASSWORD')
+                throw new GraphQLError('incorrect credentials')
             }
 
+        },
+        async logout(_:any, {}, context:any) {
+            context.session.destroy();
+            return true;
         }
     },
     Query:{

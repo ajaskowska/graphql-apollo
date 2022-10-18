@@ -1,6 +1,5 @@
 const Book = require('../../models/Book');
 
-// @ts-ignore
 module.exports = {
     Query: {
         async book(_: any, {ID}: any) {
@@ -39,8 +38,6 @@ module.exports = {
                 rating: rating
             })).modifiedCount;
             return wasEdited;
-
         }
-
     }
 }

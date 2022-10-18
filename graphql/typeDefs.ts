@@ -1,6 +1,4 @@
-const { gql } = require('apollo-server');
-
-module.exports = gql`
+module.exports = `#graphql
 
 	type Book {
 		title: String
@@ -14,7 +12,8 @@ module.exports = gql`
 	    username: String
 	    email: String
 	    password: String
-	    token: String
+	    role: String
+	    
 	}
 	
 	 input BookInput {
@@ -46,7 +45,6 @@ module.exports = gql`
         editBook(ID: ID!, bookInput: BookInput): Boolean
         registerUser(registerInput: RegisterInput):User
         loginUser(loginInput: LoginInput): User
+        logout: Boolean
     }
-   
-  
     `;
