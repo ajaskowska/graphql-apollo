@@ -1,4 +1,6 @@
-// @ts-ignore
+
+import {TUser} from "../types/types";
+
 const { model, Schema } = require('mongoose');
 
 const userSchema = new Schema({

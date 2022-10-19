@@ -47,4 +47,7 @@ module.exports = `#graphql
         loginUser(loginInput: LoginInput): User
         logout: Boolean
     }
+    type Subscription {
+        bookAdded: Book!
+}
     `;

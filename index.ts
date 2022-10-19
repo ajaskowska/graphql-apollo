@@ -12,6 +12,10 @@ const typeDefs = require('./graphql/typeDefs');
 const resolvers = require('./graphql/resolvers/index');
 const User =require('./models/User')
 const session = require('express-session');
+// @ts-ignore
+import { WebSocketServer } from 'ws';
+import { useServer } from 'graphql-ws/lib/use/ws';
+import {makeExecutableSchema} from "@graphql-tools/schema";
 
 
 // const server = new ApolloServer({
@@ -37,11 +41,31 @@ async function startApolloServer() {
 
     const httpServer = http.createServer(app);
 
+    const schema = makeExecutableSchema({ typeDefs, resolvers });
+
+
     const server = new ApolloServer({
-        typeDefs,
-        resolvers,
-        plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+        schema,
+        plugins: [ApolloServerPluginDrainHttpServer({ httpServer }),
+            {
+                async serverWillStart() {
+                    return {
+                        async drainServer() {
+                            await serverCleanup.dispose();
+                        },
+                    };
+                },
+            }
+            ],
     });
+
+    const wsServer = new WebSocketServer({
+        server: httpServer,
+        path: '/',
+    });
+
+    const serverCleanup = useServer({ schema }, wsServer);
+
     await server.start();
     app.use(
         '/',

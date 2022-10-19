@@ -1,13 +1,13 @@
 import {ApolloError} from "apollo-server-errors";
-
 const User = require('../../models/User');
 import { GraphQLError } from 'graphql';
+import {IUser, IUserInput} from "../../types/user";
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 module.exports = {
     Mutation: {
-        async registerUser(_: any, {registerInput: {username, email, password}}: any) {
+        async registerUser<T>(_: T, {registerInput: {username, email, password}}: IUserInput) {
             //check if user exist = email already in db
             const oldUser = await User.findOne({email});
             if (oldUser) {
@@ -32,7 +32,7 @@ module.exports = {
 
 
         },
-        async loginUser(_: any, {loginInput: {email, password}}: any, context: any){
+        async loginUser<T>(_: T, {loginInput: {email, password}}: IUserInput, context: any){
             try{
                 //check if user = email exists
                 const user = await User.findOne({email});
@@ -58,7 +58,7 @@ module.exports = {
         }
     },
     Query:{
-        async user(_: any, {ID}: any) {
+        async user<T>(_: T, {ID}: IUser) {
             return await User.findById(ID)
         }
     }

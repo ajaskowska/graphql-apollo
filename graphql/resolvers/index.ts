@@ -9,5 +9,11 @@ module.exports = {
     Mutation: {
         ...booksResolvers.Mutation,
         ...usersResolvers.Mutation,
+
     },
+    Subscription: {
+        ...booksResolvers.Subscription
+    }
 };
+
+

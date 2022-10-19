@@ -1,18 +1,23 @@
 import {ApolloError} from "apollo-server-errors";
-
+import {IBook, IBookInput} from "../../types/book";
+import {TPagination} from "../../types/pagination";
 const Book = require('../../models/Book');
+import { PubSub } from 'graphql-subscriptions';
+
+const pubsub = new PubSub();
+
 
 module.exports = {
     Query: {
-        async book(_: any, {ID}: any) {
+        async book<T>(_: T, {ID}: IBook) {
             return await Book.findById(ID)
         },
-        async getBooks(_: any, { offset, limit }:any) {
+        async getBooks<T>(_: T, { offset, limit }:TPagination) {
             return await Book.find().skip(offset).limit(limit);
         }
     },
     Mutation: {
-        async addBook(_: any, {bookInput: {title, author, description, rating}}: any, context:any) {
+        async addBook<T>(_: T, {bookInput: {title, author, description, rating}}: IBookInput, context:any) {
             try{
                 if(!context.user){
                     return new ApolloError(`user not logged in`)
@@ -25,17 +30,18 @@ module.exports = {
                 });
                 //mongodb save
                 await newBook.save();
+                await pubsub.publish('BOOK_CREATED', { bookAdded: newBook });
                 return newBook;
             } catch (err){
                 throw new ApolloError(`Error ${err}`)
             }
         },
-        async deleteBook(_: any, {ID}: any) {
+        async deleteBook<T>(_: T, {ID}: IBook) {
             const wasDeleted = (await Book.deleteOne({_id: ID,})).deletedCount;
             return wasDeleted;
             // return 1 if something was deleted = true, 0 if nothing = false
         },
-        async editBook(_: any, {ID, bookInput: {title, author, description, rating}}: any) {
+        async editBook<T>(_: T, {ID, bookInput: {title, author, description, rating}}: IBookInput) {
             const wasEdited = (await Book.updateOne({_id: ID}, {
                 title: title,
                 author: author,
@@ -44,5 +50,14 @@ module.exports = {
             })).modifiedCount;
             return wasEdited;
         }
+    },
+    Subscription: {
+        bookAdded: {
+            subscribe: () => {
+                pubsub.asyncIterator(['BOOK_ADDED'])
+                console.log(pubsub)
+            }
+
+        },
     }
 }
