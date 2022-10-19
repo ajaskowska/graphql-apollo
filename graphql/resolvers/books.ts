@@ -53,10 +53,9 @@ module.exports = {
     },
     Subscription: {
         bookAdded: {
-            subscribe: () => {
+            subscribe: () =>
                 pubsub.asyncIterator(['BOOK_ADDED'])
-                console.log(pubsub)
-            }
+
 
         },
     }

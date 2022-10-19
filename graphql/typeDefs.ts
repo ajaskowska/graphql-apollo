@@ -48,6 +48,6 @@ module.exports = `#graphql
         logout: Boolean
     }
     type Subscription {
-        bookAdded: Book!
+        bookAdded: Book
 }
     `;
