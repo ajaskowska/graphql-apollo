@@ -36,7 +36,7 @@ module.exports = `#graphql
  
 	type Query {
 	    book(ID: ID): Book!
-        getBooks: [Book]
+        getBooks(limit: Int, offset:Int): [Book]
         user(ID: ID!):User!
     }
     type Mutation {
