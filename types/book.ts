@@ -8,3 +8,6 @@ export interface IBook {
 export interface IBookInput extends IBook {
     bookInput: IBook;
 }
+export interface IBookFilters extends IBook {
+    bookFilters: IBook;
+}

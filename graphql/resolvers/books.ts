@@ -1,5 +1,5 @@
 import {ApolloError} from "apollo-server-errors";
-import {IBook, IBookInput} from "../../types/book";
+import {IBook, IBookFilters, IBookInput} from "../../types/book";
 import {TPagination} from "../../types/pagination";
 const Book = require('../../models/Book');
 import { PubSub } from 'graphql-subscriptions';
@@ -12,8 +12,17 @@ module.exports = {
         async book<T>(_: T, {ID}: IBook) {
             return await Book.findById(ID)
         },
-        async getBooks<T>(_: T, { offset, limit }:TPagination) {
-            return await Book.find().skip(offset).limit(limit);
+        // async getBooks<T>(_: T, { offset, limit }:TPagination) {
+        //     return await Book.find().skip(offset).limit(limit);
+        // },
+        async getFilteredBooks<T>(_:T, {bookFilters: {title, author, description, rating}}: IBookFilters, { offset, limit }:TPagination){
+            const filter:any = {};
+            if (title) filter.title = {$regex: title || '', $options: 'i'};
+            if (author) filter.author = {$regex: author || '', $options: 'i'};
+            if (description) filter.description = {$regex: description || '', $options: 'i'};
+            if (rating) filter.rating = rating;
+
+            return await Book.find(filter).skip(offset).limit(limit);
         }
     },
     Mutation: {
@@ -30,7 +39,7 @@ module.exports = {
                 });
                 //mongodb save
                 await newBook.save();
-                await pubsub.publish('BOOK_CREATED', { bookAdded: newBook });
+                await pubsub.publish('BOOK_ADDED', { bookAdded: newBook });
                 return newBook;
             } catch (err){
                 throw new ApolloError(`Error ${err}`)
