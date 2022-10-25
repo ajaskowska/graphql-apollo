@@ -17,27 +17,13 @@ import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import {makeExecutableSchema} from "@graphql-tools/schema";
 
-
-// const server = new ApolloServer({
-//     typeDefs,
-//     resolvers
-// });
-//
-// mongoose
-//     .connect(process.env.MONGODB_URI)
-//     .then(() => {
-//         console.log('MongoDB connected');
-//         return server.listen({ port: 4000 });
-//     })
-//     .then((res: Response) => {
-//         console.log(`server running at ${res.url}`);
-//     });
 async function startApolloServer() {
 
     mongoose.connect(process.env.MONGODB_URI)
-        .then(() => console.log('Connected to the database!'));
+        .then(() => console.log('hey gorgeous, you are connected to the database!!!'));
 
     const app = express();
+
 
     const httpServer = http.createServer(app);
 
@@ -72,7 +58,7 @@ async function startApolloServer() {
         cors<cors.CorsRequest>(),
         json(),
         session({
-            secret: process.env.SESSION_SECRET,
+            secret: 'qwerty123',
             resave: false,
             saveUninitialized: false,
             cookie: {
@@ -88,7 +74,7 @@ async function startApolloServer() {
         }),
     );
     await new Promise<void>((res) =>
-        httpServer.listen({ port: 4000 }, res));
+        httpServer.listen({ port: 5000 }, res));
 }
 
-startApolloServer().then(() => console.log(`Server ready at http://localhost:4000/`));
+startApolloServer().then(() => console.log(`Server is ready at http://localhost:5000/`));
