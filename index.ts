@@ -64,62 +64,19 @@ async function startApolloServer() {
 
     app.get('/steps', async (req, res) => {
 
-
         const queryURL = new urlParse(req.url);
 
-                const {tokens} = await oauth2Client.getToken(req.query.code)
-                // console.log(tokens.refresh_token)
-                // if (tokens.refresh_token) {
-                //     Settings.findOne({profileId: profile.id}).then((currentUser) => {
-                //         if (currentUser) {
-                //             //    user already exists
-                //             console.log("user is: ", currentUser);
-                //         } else {
-                //             //    save new user to db
-                //             new Settings({
-                //                 profileId: profile.id,
-                //                 refreshToken: refreshToken
-                //             }).save().then((newUser) => {
-                //                 console.log("new user: " + newUser);
-                //             });
-        await Settings.collection.drop();
-        await new Settings({ refreshtoken: tokens.refresh_token }).save();
+        const {tokens} = await oauth2Client.getToken(req.query.code);
+        if (tokens.refresh_token ){
+             Settings.collection.drop();
+             new Settings({ refreshtoken: tokens.refresh_token }).save();// store the refresh_token in my database!
+        }
 
-                    // const newRefreshToken = new Settings({
-                    //     refreshtoken: tokens.refresh_token
-                    // })
-                    // newRefreshToken.save();// store the refresh_token in my database!
-        console.log(req.query)
-        //         oauth2Client.setCredentials({tokens});
-        // userCredential = tokens;
-        console.log(tokens);
+        oauth2Client.setCredentials({tokens});
+
         res.redirect('/graphql');
-
-
-
-        // const calendar = google.calendar({version: 'v3', auth: oauth2Client});
-        // console.log("calendar", calendar)
-        // const response = await calendar.events.list({
-        //     calendarId: 'primary',
-        //     maxResults: 10,
-        //     singleEvents: true
-        // });
-        // console.log("!!!!!!", response.data.items)
-        // const events = response.data.items;
-        // if (!events || events.len gth === 0) {
-        //     console.log('No upcoming events found.');
-        //     return;
-        // }
-        // console.log('Upcoming 10 events:');
-        // // @ts-ignore
-        // events.map((event, i) => {
-        //     const start = event.start.dateTime || event.start.date;
-        //     console.log(`${start} - ${event.summary}`);
-        // });
-        // res.send('logged in')
-
-
         })
+
     app.get('/revoke', (res, req)=>{
         // Example on revoking a token
             // Build the string for the POST request
@@ -190,7 +147,9 @@ async function startApolloServer() {
     await server.start();
     app.use(
         '/graphql',
-        cors<cors.CorsRequest>(),
+        cors<cors.CorsRequest>(
+            // {credentials:true}
+        ),
         bodyParser.json(),
         session({
             secret: 'qwerty123',

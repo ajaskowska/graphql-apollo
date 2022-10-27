@@ -1,5 +1,8 @@
 module.exports = `#graphql
 
+	type Calendar {
+	    refreshtoken: String
+	}
 	type Book {
 		title: String
 		author: String
@@ -42,6 +45,7 @@ module.exports = `#graphql
 	    book(ID: ID): Book!
         getFilteredBooks(bookFilters: BookFilters, limit: Int, offset:Int): [Book]
         user(ID: ID!):User!
+        getCalendar: Calendar
     }
     
     type Mutation {
