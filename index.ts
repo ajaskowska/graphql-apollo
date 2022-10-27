@@ -72,7 +72,7 @@ async function startApolloServer() {
              new Settings({ refreshtoken: tokens.refresh_token }).save();// store the refresh_token in my database!
         }
 
-        oauth2Client.setCredentials({tokens});
+        // oauth2Client.setCredentials({tokens});
 
         res.redirect('/graphql');
         })
