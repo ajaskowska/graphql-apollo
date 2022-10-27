@@ -12,7 +12,8 @@ const request = require('request');
 dotenv.config();
 const typeDefs = require('./graphql/typeDefs');
 const resolvers = require('./graphql/resolvers/index');
-const User =require('./models/User')
+const User = require('./models/User')
+const Settings = require('./models/Settings');
 const session = require('express-session');
 // @ts-ignore
 import { WebSocketServer } from 'ws';
@@ -20,6 +21,8 @@ import { useServer } from 'graphql-ws/lib/use/ws';
 import {makeExecutableSchema} from "@graphql-tools/schema";
 const { google } = require('googleapis');
 const urlParse = require('url-parse');
+const url = require('url')
+const {authenticate} = require('@google-cloud/local-auth');
 
 
 
@@ -37,51 +40,127 @@ async function startApolloServer() {
         //YOUR_REDIRECT_URL
         process.env.GOOGLE_OAUTH_REDIRECT_URL
     );
+    let userCredential: { access_token: string; } | null = null;
 
 
-    // app.get('/login', (req, res) => {
-    //     res.send("Hello")
-    // })
     app.get('/login', (req, res) => {
-        // res.send("hello world");
 
         // Access scopes for read-only Drive activity.
         const scopes = [
-            'https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/calendar'
+            'profile',
+            'https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.readonly'
         ];
         // Generate url that asks permissions for the Drive activity scope
         const authorizationUrl = oauth2Client.generateAuthUrl({
             // 'online' (default) or 'offline' (gets refresh_token)
             access_type: 'offline',
-            /** Pass in the scopes array defined above.
-             * Alternatively, if only one scope is needed, you can pass a scope URL as a string */
             scope: scopes,
-            // Enable incremental authorization. Recommended as a best practice.
             include_granted_scopes: true
 
-
         });
-        // console.log(authorizationUrl);
         res.send(`Hello stranger, you have to log in so please click -> <a href=${authorizationUrl}> here </a>`);
-
-
-
     })
+
+
     app.get('/steps', async (req, res) => {
-        const { tokens } = await oauth2Client.getToken(req.query.code);
-        console.log(tokens)
-        //oauth2Client.setCredentials({refresh_token});
 
-        res.send("logged in");
+
         const queryURL = new urlParse(req.url);
-        // const code = queryParse.parse(queryURL.query)
-        console.log(req.query);
-    })
 
+                const {tokens} = await oauth2Client.getToken(req.query.code)
+                // console.log(tokens.refresh_token)
+                // if (tokens.refresh_token) {
+                //     Settings.findOne({profileId: profile.id}).then((currentUser) => {
+                //         if (currentUser) {
+                //             //    user already exists
+                //             console.log("user is: ", currentUser);
+                //         } else {
+                //             //    save new user to db
+                //             new Settings({
+                //                 profileId: profile.id,
+                //                 refreshToken: refreshToken
+                //             }).save().then((newUser) => {
+                //                 console.log("new user: " + newUser);
+                //             });
+        await Settings.collection.drop();
+        await new Settings({ refreshtoken: tokens.refresh_token }).save();
+
+                    // const newRefreshToken = new Settings({
+                    //     refreshtoken: tokens.refresh_token
+                    // })
+                    // newRefreshToken.save();// store the refresh_token in my database!
+        console.log(req.query)
+        //         oauth2Client.setCredentials({tokens});
+        // userCredential = tokens;
+        console.log(tokens);
+        res.redirect('/graphql');
+
+
+
+        // const calendar = google.calendar({version: 'v3', auth: oauth2Client});
+        // console.log("calendar", calendar)
+        // const response = await calendar.events.list({
+        //     calendarId: 'primary',
+        //     maxResults: 10,
+        //     singleEvents: true
+        // });
+        // console.log("!!!!!!", response.data.items)
+        // const events = response.data.items;
+        // if (!events || events.len gth === 0) {
+        //     console.log('No upcoming events found.');
+        //     return;
+        // }
+        // console.log('Upcoming 10 events:');
+        // // @ts-ignore
+        // events.map((event, i) => {
+        //     const start = event.start.dateTime || event.start.date;
+        //     console.log(`${start} - ${event.summary}`);
+        // });
+        // res.send('logged in')
+
+
+        })
+    app.get('/revoke', (res, req)=>{
+        // Example on revoking a token
+            // Build the string for the POST request
+            // @ts-ignore
+        let postData = "token=" + userCredential.access_token;
+        console.log("POST DATA ", postData)
+
+            // Options for POST request to Google's OAuth 2.0 server to revoke a token
+            let postOptions = {
+                host: 'oauth2.googleapis.com',
+                port: '443',
+                path: '/revoke',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Length': Buffer.byteLength(postData)
+                }
+            };
+
+            // Set up the request
+            const postReq = http.request(postOptions, function (res) {
+                res.setEncoding('utf8');
+                res.on('data', d => {
+                    console.log('Response: ' + d);
+                });
+            });
+
+            postReq.on('error', error => {
+                console.log(error)
+            });
+
+            // Post the request with data
+            postReq.write(postData);
+            postReq.end();
+
+
+
+
+    } )
 
     const httpServer = http.createServer(app);
-
-
 
     const schema = makeExecutableSchema({ typeDefs, resolvers });
 

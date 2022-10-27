@@ -1,6 +1,7 @@
 // @ts-ignore
 const { model, Schema } = require('mongoose');
 
+// @ts-ignore
 const bookSchema = new Schema({
     title: String,
     author: String,
