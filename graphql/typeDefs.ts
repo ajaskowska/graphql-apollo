@@ -1,8 +1,13 @@
 module.exports = `#graphql
 
 	type Calendar {
-	    refreshtoken: String
+	    summary: String
+        organizer: String
+        start: String
+        end: String
+        hangoutLink: String
 	}
+	
 	type Book {
 		title: String
 		author: String
@@ -45,7 +50,7 @@ module.exports = `#graphql
 	    book(ID: ID): Book!
         getFilteredBooks(bookFilters: BookFilters, limit: Int, offset:Int): [Book]
         user(ID: ID!):User!
-        getCalendar: Calendar
+        getCalendar: [Calendar]
     }
     
     type Mutation {
@@ -55,6 +60,7 @@ module.exports = `#graphql
         registerUser(registerInput: RegisterInput):User
         loginUser(loginInput: LoginInput): User
         logout: Boolean
+        addCalendarEvent(summary: String, organizer: String, start: String, end: String, hangoutLink: String): Calendar
     }
     
     type Subscription {

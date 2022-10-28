@@ -11,7 +11,7 @@ module.exports = {
     Mutation: {
         ...booksResolvers.Mutation,
         ...usersResolvers.Mutation,
-        // ...calendarResolvers.Mutation
+        ...calendarResolvers.Mutation
 
     },
     Subscription: {
