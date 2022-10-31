@@ -3,6 +3,9 @@ const usersResolvers = require('./users');
 const calendarResolvers = require('./calendar');
 
 module.exports = {
+    Calendar: {
+        ...calendarResolvers.Calendar
+    },
     Query: {
         ...booksResolvers.Query,
         ...usersResolvers.Query,

@@ -10,10 +10,10 @@ const dotenv = require('dotenv');
 // @ts-ignore
 const request = require('request');
 dotenv.config();
-const typeDefs = require('./graphql/typeDefs');
-const resolvers = require('./graphql/resolvers/index');
-const User = require('./models/User')
-const Settings = require('./models/Settings');
+const typeDefs = require('./backend/graphql/typeDefs');
+const resolvers = require('./backend/graphql/resolvers/index');
+const User = require('./backend/models/User')
+const Settings = require('./backend/models/Settings');
 const session = require('express-session');
 // @ts-ignore
 import { WebSocketServer } from 'ws';

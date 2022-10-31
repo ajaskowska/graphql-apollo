@@ -1,14 +1,14 @@
 const Settings = require('../../models/Settings');
 const { google } = require('googleapis');
 
-
-
-
 module.exports = {
     Calendar: {
-        organizer: (calendar: { organizer: { email: any; }; }) => calendar.organizer.email,
-        start: (calendar: { start: { dateTime: any; }; }) => calendar.start.dateTime,
-        end: (calendar: { end: { dateTime: any; }; }) => calendar.end.dateTime,
+        // @ts-ignore
+        organizer: (calendar) => calendar.organizer.email,
+        // @ts-ignore
+        start: (calendar) => calendar.start.dateTime.toString(),
+        // @ts-ignore
+        end: (calendar) => calendar.end.dateTime,
     },
     Query: {
 
