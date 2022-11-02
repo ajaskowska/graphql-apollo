@@ -1,8 +1,16 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import {useEffect, useState} from "react";
 import jwt_decode from 'jwt-decode';
+import Login from './components/Login'
+import {ApolloProvider, ApolloClient, InMemoryCache} from "@apollo/client";
+import { useGoogleLogin,  } from '@react-oauth/google';
+
+
+const client = new ApolloClient({
+    uri: 'http://localhost:5000/graphql',
+    cache: new InMemoryCache()
+});
 
 function App() {
   const [user, setUser]:any = useState({});
@@ -37,21 +45,26 @@ function App() {
 
 
     return (
-    <div className="App">
-      <div id="signInDiv"></div>
-        {Object.keys(user).length != 0 &&
-            <button onClick={ (e) => handleSignOut(e)}>Sign Out</button>
-        }
+    <>
+        <ApolloProvider client={client}>
+            <div className="App">
+                <div id="signInDiv"></div>
+                {Object.keys(user).length != 0 &&
+                    <button onClick={ (e) => handleSignOut(e)}>Sign Out</button>
+                }
 
-        {user &&
-            <div>
-                <h2>{user.name}</h2>
-                <img src={user.picture}/>
+                {user &&
+                    <div>
+                        <h2>{user.name}</h2>
+                        <img src={user.picture}/>
+
+                    </div>
+                }
 
             </div>
-        }
-
-    </div>
+        </ApolloProvider>
+        </>
+        
   );
 }
 

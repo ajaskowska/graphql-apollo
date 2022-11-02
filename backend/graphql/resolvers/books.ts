@@ -10,12 +10,14 @@ const pubsub = new PubSub();
 module.exports = {
     Query: {
         async book<T>(_: T, {ID}: IBook) {
+
             return await Book.findById(ID)
         },
         // async getBooks<T>(_: T, { offset, limit }:TPagination) {
         //     return await Book.find().skip(offset).limit(limit);
         // },
-        async getFilteredBooks<T>(_:T, {bookFilters: {title, author, description, rating}}: IBookFilters, { offset, limit }:TPagination){
+        async getFilteredBooks<T>(_:T, {bookFilters: {title, author, description, rating}}: IBookFilters, { offset, limit }:TPagination, context:any){
+            console.log(context.session)
             const filter:any = {};
             if (title) filter.title = {$regex: title || '', $options: 'i'};
             if (author) filter.author = {$regex: author || '', $options: 'i'};

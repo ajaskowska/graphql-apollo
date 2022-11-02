@@ -1,10 +1,8 @@
-// @ts-ignore
-const { model, Schema } = require('mongoose');
+import mongoose, { Schema } from 'mongoose';
 
-// @ts-ignore
-const settingsSchema = new Schema({
-    refreshtoken: String
 
+const SettingsSchema = new Schema ({
+    refreshToken: { type: String, required: true }
 });
 
-module.exports = model('Settings', settingsSchema)
+export default mongoose.model('Settings', SettingsSchema);

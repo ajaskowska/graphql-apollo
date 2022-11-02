@@ -10,21 +10,24 @@ const dotenv = require('dotenv');
 // @ts-ignore
 const request = require('request');
 dotenv.config();
-const typeDefs = require('./backend/graphql/typeDefs');
-const resolvers = require('./backend/graphql/resolvers/index');
-const User = require('./backend/models/User')
-const Settings = require('./backend/models/Settings');
+const typeDefs = require('./graphql/typeDefs');
+const resolvers = require('./graphql/resolvers');
+const User = require('./models/User')
+const Settings = require('./models/Settings');
 const session = require('express-session');
 // @ts-ignore
 import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import {makeExecutableSchema} from "@graphql-tools/schema";
+import { isLoggedIn } from './helpers/isLoggedIn';
 const { google } = require('googleapis');
 const urlParse = require('url-parse');
 const url = require('url')
 const {authenticate} = require('@google-cloud/local-auth');
-
-
+const expressPlayground = require('graphql-playground-middleware-express').default
+const {OAuth2Client} = require('google-auth-library');
+const passport = require('passport');
+require('./auth');
 
 async function startApolloServer() {
 
@@ -32,90 +35,59 @@ async function startApolloServer() {
         .then(() => console.log('hey gorgeous, you are connected to the database!!!'));
 
     const app = express();
-    const oauth2Client = new google.auth.OAuth2(
-        //YOUR_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_ID,
-        //YOUR_CLIENT_SECRET
-        process.env.GOOGLE_CLIENT_SECRET,
-        //YOUR_REDIRECT_URL
-        process.env.GOOGLE_OAUTH_REDIRECT_URL
-    );
-    let userCredential: { access_token: string; } | null = null;
+    // const oauth2Client = new google.auth.OAuth2(
+    //     //YOUR_CLIENT_ID,
+    //     process.env.GOOGLE_CLIENT_ID,
+    //     //YOUR_CLIENT_SECRET
+    //     process.env.GOOGLE_CLIENT_SECRET,
+    //     //YOUR_REDIRECT_URL
+    //     process.env.GOOGLE_OAUTH_REDIRECT_URL
+    // );
+    // let userCredential: { access_token: string; } | null = null;
 
 
-    app.get('/login', (req, res) => {
 
-        // Access scopes for read-only Drive activity.
-        const scopes = [
-            'profile',
-            'https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.readonly'
-        ];
-        // Generate url that asks permissions for the Drive activity scope
-        const authorizationUrl = oauth2Client.generateAuthUrl({
-            // 'online' (default) or 'offline' (gets refresh_token)
-            access_type: 'offline',
-            scope: scopes,
-            include_granted_scopes: true
+    // app.get('/login', (req, res) => {
+    //
+    //     // Access scopes for read-only Drive activity.
+    //     const scopes = [
+    //         'profile',
+    //         'https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.readonly'
+    //     ];
+    //     // Generate url that asks permissions for the Drive activity scope
+    //     const authorizationUrl = oauth2Client.generateAuthUrl({
+    //         // 'online' (default) or 'offline' (gets refresh_token)
+    //         access_type: 'offline',
+    //         scope: scopes,
+    //         include_granted_scopes: true
+    //
+    //     });
+    //     res.send(`Hello stranger, you have to log in so please click -> <a href=${authorizationUrl}> here </a>`);
+    // })
 
-        });
-        res.send(`Hello stranger, you have to log in so please click -> <a href=${authorizationUrl}> here </a>`);
-    })
 
-
-    app.get('/steps', async (req, res) => {
-
-        const queryURL = new urlParse(req.url);
-
-        const {tokens} = await oauth2Client.getToken(req.query.code);
-        if (tokens.refresh_token ){
-             Settings.collection.drop();
-             new Settings({ refreshtoken: tokens.refresh_token }).save();// store the refresh_token in my database!
-        }
-
-        // oauth2Client.setCredentials({tokens});
-
-        res.redirect('/graphql');
-        })
-
-    app.get('/revoke', (res, req)=>{
-        // Example on revoking a token
-            // Build the string for the POST request
-            // @ts-ignore
-        let postData = "token=" + userCredential.access_token;
-        console.log("POST DATA ", postData)
-
-            // Options for POST request to Google's OAuth 2.0 server to revoke a token
-            let postOptions = {
-                host: 'oauth2.googleapis.com',
-                port: '443',
-                path: '/revoke',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Content-Length': Buffer.byteLength(postData)
-                }
-            };
-
-            // Set up the request
-            const postReq = http.request(postOptions, function (res) {
-                res.setEncoding('utf8');
-                res.on('data', d => {
-                    console.log('Response: ' + d);
-                });
-            });
-
-            postReq.on('error', error => {
-                console.log(error)
-            });
-
-            // Post the request with data
-            postReq.write(postData);
-            postReq.end();
+    // app.get('/steps', async (req, res, next) => {
+    //
+    //     const queryURL = new urlParse(req.url);
+    //
+    //     const {tokens} = await oauth2Client.getToken(req.query.code);
+    //     console.log("!!!!!!!!!!!!", tokens)
+    //     console.log(req.query);
+    //     if (tokens.refresh_token ){
+    //          Settings.collection.drop();
+    //          new Settings({ refreshtoken: tokens.refresh_token }).save();// store the refresh_token in my database!
+    //     }
+    //
+    //
+    //     // oauth2Client.setCredentials({tokens});
+    //
+    //     res.redirect('/graphql');
+    //     })
 
 
 
 
-    } )
+
 
     const httpServer = http.createServer(app);
 
@@ -145,28 +117,66 @@ async function startApolloServer() {
     const serverCleanup = useServer({ schema }, wsServer);
 
     await server.start();
-    app.use(
+
+    app.use(cors({
+        origin: "http://localhost:3000",
+        methods: "GET, POST, PUT, DELETE",
+        credentials: true
+    }));
+    app.use(session({
+        secret: "secret",
+        resave: false,
+        saveUninitialized: true,
+        cookie: {
+            maxAge: 1000 * 60 * 60 * 24,
+        },
+    }));
+    app.use(bodyParser.json());
+    app.use(passport.initialize());
+    app.use(passport.session());
+    app.get('/', (req, res) => {
+        res.send('<a href="/auth/google"> Authenticate with google</a>');
+    })
+
+    app.get('/auth/google',
+        passport.authenticate('google', { scope: ['email', 'profile'], accessType: 'offline', prompt: 'consent'}))
+
+    app.get('/google/callback',
+        passport.authenticate('google', {
+            successRedirect: 'http://localhost:3000/',
+            // successRedirect: '/protected',
+            failureRedirect: '/auth/failure'
+        })
+    )
+    app.get('/protected', (req, res) => {
+        console.log("!!!!!!!!!" , req.user)
+        // res.end()
+    })
+
+    app.get('/auth/failure', (req, res) => {
+        res.send('something went wrong. Login failed!')
+    })
+
+    app.get("/playground", expressPlayground({ endpoint: "/graphql" }));
+
+
+    app.get("/logout", (req, res) => {
+        // req.logout();
+        //req.session.destroy();
+        res.redirect("http://localhost:5000");
+    })
+
+    app.use(        //<-- set middleware
         '/graphql',
-        cors<cors.CorsRequest>(
-            // {credentials:true}
-        ),
-        bodyParser.json(),
-        session({
-            secret: 'qwerty123',
-            resave: false,
-            saveUninitialized: false,
-            cookie: {
-                maxAge: 1000 * 60 * 60 * 24,
-            },
-        }),
-        expressMiddleware(server, {
-            context: async({ req }: any) => (
+        expressMiddleware(server, {     //<-- add to apollo context
+            context: async({ req }) => (
                 {
+                    // @ts-ignore
                     session: req.session,
-                    user: await User.findOne({ username: req.session.username })
                 }),
         }),
     );
+
     await new Promise<void>((res) =>
         httpServer.listen({ port: 5000 }, res));
 }
